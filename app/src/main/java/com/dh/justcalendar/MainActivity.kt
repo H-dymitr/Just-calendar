@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.dh.justcalendar.R
 import com.dh.justcalendar.model.Event
 import android.util.Log
+import android.widget.CheckBox
 import androidx.annotation.RequiresApi
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -29,8 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var eventNameEditText: EditText
     private lateinit var descriptionEditText: EditText
     private lateinit var dateEditText: EditText
-    private lateinit var locationEditText: EditText
-    private lateinit var updateLocationButton: Button
+    private lateinit var addCurrentLocationCheckBox: CheckBox
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
@@ -44,11 +44,27 @@ class MainActivity : AppCompatActivity() {
         eventNameEditText = findViewById(R.id.editTextEventName)
         descriptionEditText = findViewById(R.id.editTextDescription)
         dateEditText = findViewById(R.id.editTextDate)
+        addCurrentLocationCheckBox = findViewById(R.id.checkBox)
 
         // TODO: Add date picker for dateEditText
         // add date formater for dateEditText
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         dateEditText.setText(formatter.format(java.time.LocalDate.now()))
+
+        // get addCurrentLocationCheckBox state from shared preferences
+        val sharedPref = this.getPreferences(MODE_PRIVATE)
+        val defaultValue = false
+        val addCurrentLocation = sharedPref.getBoolean("add_current_location", defaultValue)
+        addCurrentLocationCheckBox.isChecked = addCurrentLocation
+
+        // addCurrentLocationCheckBox on click listener
+        addCurrentLocationCheckBox.setOnClickListener {
+            with (sharedPref.edit()) {
+                putBoolean("add_current_location", addCurrentLocationCheckBox.isChecked)
+                apply()
+            }
+        }
+
 
 
 
@@ -146,7 +162,10 @@ class MainActivity : AppCompatActivity() {
                         Log.d("MyApp", "Event Location: ${location.latitude}") // Log the event location
                         val latLng = LatLng(location.latitude, location.longitude)
                         // TODO: Add reverse geocoding to get address from latLng
-                        val address = latLng.toString();
+                        var address = ""
+                        if (addCurrentLocationCheckBox.isChecked) {
+                            address = latLng.toString()
+                        }
 
                         // Prepare event details
                         val event = Event(eventNameEditText.text.toString(), descriptionEditText.text.toString(), dateEditText.text.toString(), address)
